@@ -26,14 +26,18 @@ jobs:
         python3 -c "
         import os
         with open('config.yml', 'r') as f:
-            text = f.read()
+            lines = f.readlines()
         
-        # Swaps out placeholders inside config.yml for your hidden environment values safely
-        text = text.replace('<YOUR DISCORD WEBHOOK>', os.environ['WEBHOOK'])
-        text = text.replace('mongodb://localhost:27017/', os.environ['MONGO'])
+        for i, line in enumerate(lines):
+            if 'programs_watcher:' in line:
+                parts = line.split(':', 1)
+                lines[i] = f'{parts[0]}: {os.environ[\"WEBHOOK\"]}\n'
+            elif 'uri:' in line:
+                parts = line.split(':', 1)
+                lines[i] = f'{parts[0]}: {os.environ[\"MONGO\"]}\n'
         
         with open('config.yml', 'w') as f:
-            f.write(text)
+            f.writelines(lines)
         "
 
     - name: Install dependencies
