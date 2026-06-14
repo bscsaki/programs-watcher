@@ -27,7 +27,7 @@ def check_bugcrowd(tmp_dir, mUrl, first_time, db, config):
             data["isNewProgram"] = True
             watcherData = {"programKey": programKey, "programName": programName, "programURL": programURL, "programType": "",
                            "outOfScope": [], "inScope": [], "reward": {}}
-        for target in program["target_groups"]:
+        for target in (program ["target_groups"] or []):
             if target.get("in_scope", False) == False:
                 for item in target["targets"]:
                     dataJson["outOfScope"].append(item["name"])
