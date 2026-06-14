@@ -18,26 +18,38 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Inject hidden secrets into config.yml
+    - name: Inject hidden secrets and patch Bugcrowd bug
       env:
         WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         MONGO: ${{ secrets.MONGO_URI }}
       run: |
         python3 -c "
         import os
+        
+        # 1. Inject Secrets into config.yml
         with open('config.yml', 'r') as f:
             lines = f.readlines()
         
         for i, line in enumerate(lines):
             if 'programs_watcher:' in line:
                 parts = line.split(':', 1)
-                lines[i] = f'{parts[0]}: {os.environ[\"WEBHOOK\"]}\n'
+                lines[i] = f'{parts[0]}: \"{os.environ[\"WEBHOOK\"].strip()}\"\n'
             elif 'uri:' in line:
                 parts = line.split(':', 1)
-                lines[i] = f'{parts[0]}: {os.environ[\"MONGO\"]}\n'
+                lines[i] = f'{parts[0]}: \"{os.environ[\"MONGO\"].strip()}\"\n'
         
         with open('config.yml', 'w') as f:
             f.writelines(lines)
+            
+        # 2. Force patch the bugcrowd.py code bug on-the-fly
+        path = 'modules/platforms/bugcrowd.py'
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                code = f.read()
+            code = code.replace('target[\"in_scope\"]', 'target.get(\"in_scope\", False)')
+            code = code.replace(\"target['in_scope']\", 'target.get(\"in_scope\", False)')
+            with open(path, 'w') as f:
+                f.write(code)
         "
 
     - name: Install dependencies
